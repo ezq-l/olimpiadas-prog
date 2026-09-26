@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kiosco Don Pepe</title>
+  <script>
+    // Aplica el modo claro/oscuro antes de dibujar la página, para que no parpadee.
+    // Si el visitante nunca eligió, se usa el modo de su computadora.
+    document.documentElement.dataset.tema = localStorage.getItem("tema")
+      || (matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro");
+  </script>
+  <link rel="stylesheet" href="/static/styles.css?v=6">
+</head>
+<body>
+
+  <!-- ===================== BARRA SUPERIOR ===================== -->
+  <header class="barra">
+    <a class="marca" href="#/catalogo"><span class="logo">DP</span> Kiosco <b>Don Pepe</b></a>
+
+    <nav class="nav">
+      <a href="#/catalogo" data-nav="catalogo">Catálogo</a>
+      <a href="#/pedidos" data-nav="pedidos" id="nav-pedidos" hidden>Mis pedidos</a>
+      <a href="#/admin" data-nav="admin" id="nav-admin" hidden>Administración</a>
+    </nav>
+
+    <button class="btn-tema" id="btn-tema" onclick="cambiarTema()" title="Cambiar a modo oscuro">🌙</button>
+
+    <button class="btn-carrito" onclick="abrirCarrito()">
+      🛒 Carrito <span class="contador" id="contador-carrito">0</span>
+    </button>
+
+    <div id="usuario-logueado" hidden>
+      <span id="usuario-nombre"></span>
+      <button class="btn btn-borde btn-chico" onclick="cerrarSesion()">Salir</button>
+    </div>
+    <a class="btn btn-primario btn-chico" id="btn-ingresar" href="#/ingresar">Ingresar</a>
+  </header>
+
+  <main>
+    <!-- ===================== CATÁLOGO ===================== -->
+    <section class="vista" id="vista-catalogo" hidden>
+      <div class="titulo-vista">
+        <h1>Catálogo</h1>
+        <div class="filtros">
+          <input id="buscar" type="search" placeholder="Buscar productos…" oninput="dibujarCatalogo()">
+          <select id="ordenar" onchange="dibujarCatalogo()">
+            <option value="nombre">Ordenar: A–Z</option>
+            <option value="precio-menor">Precio: menor a mayor</option>
+            <option value="precio-mayor">Precio: mayor a menor</option>
+          </select>
+        </div>
+      </div>
+      <div class="grilla" id="grilla-productos"></div>
+    </section>
+
+    <!-- ===================== MIS PEDIDOS ===================== -->
+    <section class="vista" id="vista-pedidos" hidden>
+      <h1>Mis pedidos</h1>
+      <div id="lista-pedidos"></div>
+    </section>
+
+    <!-- ===================== ADMINISTRACIÓN ===================== -->
+    <section class="vista" id="vista-admin" hidden>
+      <h1>Administración</h1>
+      <div class="estadisticas" id="estadisticas"></div>
+
+      <div class="pestanas">
+        <button id="pestana-pedidos" class="activa" onclick="mostrarPestanaAdmin('pedidos')">Pedidos</button>
+        <button id="pestana-productos" onclick="mostrarPestanaAdmin('productos')">Productos</button>
+        <button id="pestana-apariencia" onclick="mostrarPestanaAdmin('apariencia')">Apariencia</button>
+      </div>
+
+      <div id="panel-pedidos">
+        <label>Filtrar por estado:
+          <select id="filtro-estado" onchange="dibujarTablaPedidos()">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="en_camino">En camino</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </label>
+        <div class="tabla" id="tabla-pedidos"></div>
+      </div>
+
+      <div id="panel-productos" hidden>
+        <button class="btn btn-primario" onclick="abrirFormularioProducto()">+ Nuevo producto</button>
+        <div class="tabla" id="tabla-productos"></div>
+      </div>
+
+      <div id="panel-apariencia" hidden>
+        <p>Estos colores se guardan <b>solo para tu cuenta</b>: los demás usuarios y administradores no ven
+          los cambios. Se aplican tanto en modo claro como en modo oscuro.</p>
+
+        <h3>Paletas rápidas</h3>
+        <div class="paletas-rapidas">
+          <button class="btn btn-borde paleta-rapida" onclick="elegirPaletaRapida('azul')"><span class="muestra" style="background:#1c62b9"></span>Azul</button>
+          <button class="btn btn-borde paleta-rapida" onclick="elegirPaletaRapida('verde')"><span class="muestra" style="background:#2b8a3e"></span>Verde</button>
+          <button class="btn btn-borde paleta-rapida" onclick="elegirPaletaRapida('violeta')"><span class="muestra" style="background:#7048e8"></span>Violeta</button>
+          <button class="btn btn-borde paleta-rapida" onclick="elegirPaletaRapida('rosa')"><span class="muestra" style="background:#c2255c"></span>Rosa</button>
+        </div>
+
+        <h3>Colores personalizados</h3>
+        <div class="selector-colores">
+          <label><input type="color" id="color-principal" oninput="previsualizarPaleta()">
+            <span>Principal <small>Botones, links y pestañas</small></span></label>
+          <label><input type="color" id="color-exito" oninput="previsualizarPaleta()">
+            <span>Éxito <small>Stock disponible, entregado</small></span></label>
+          <label><input type="color" id="color-aviso" oninput="previsualizarPaleta()">
+            <span>Aviso <small>Poco stock, pendiente</small></span></label>
+          <label><input type="color" id="color-peligro" oninput="previsualizarPaleta()">
+            <span>Peligro <small>Errores, sin stock, eliminar</small></span></label>
+          <label><input type="color" id="color-info" oninput="previsualizarPaleta()">
+            <span>Información <small>Confirmado, en camino</small></span></label>
+        </div>
+
+        <h3 style="margin-top: 20px">Vista previa</h3>
+        <div class="vista-previa">
+          <button class="btn btn-primario" type="button">Botón principal</button>
+          <button class="btn btn-peligro" type="button">Eliminar</button>
+          <span class="stock">Stock: 20</span>
+          <span class="stock poco-stock">¡Quedan 3!</span>
+          <span class="stock sin-stock">Sin stock</span>
+          <span class="estado estado-pendiente">Pendiente</span>
+          <span class="estado estado-en_camino">En camino</span>
+          <span class="estado estado-entregado">Entregado</span>
+          <a href="#/admin">Un link</a>
+        </div>
+
+        <div class="botones-apariencia">
+          <button class="btn btn-primario" onclick="guardarPaleta()">Guardar colores</button>
+          <button class="btn btn-borde" onclick="restaurarPaleta()">Volver a los colores originales</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== INGRESAR / CREAR CUENTA ===================== -->
+    <section class="vista" id="vista-ingresar" hidden>
+      <div class="tarjeta-acceso">
+        <div class="pestanas">
+          <button id="pestana-login" class="activa" onclick="mostrarFormularioAcceso('login')">Ingresar</button>
+          <button id="pestana-registro" onclick="mostrarFormularioAcceso('registro')">Crear cuenta</button>
+        </div>
+
+        <form id="form-login" onsubmit="enviarLogin(event)" novalidate>
+          <p class="alerta" hidden></p>
+          <label>Email <input name="email" type="email" autocomplete="email"></label>
+          <label>Contraseña <input name="password" type="password" autocomplete="current-password"></label>
+          <button class="btn btn-primario btn-ancho">Ingresar</button>
+        </form>
+
+        <form id="form-registro" onsubmit="enviarRegistro(event)" novalidate hidden>
+          <p class="alerta" hidden></p>
+          <label>Nombre y apellido <input name="nombre" autocomplete="name"></label>
+          <label>Email <input name="email" type="email" autocomplete="email"></label>
+          <label>Contraseña <small>(mínimo 6 caracteres)</small>
+            <input name="password" type="password" autocomplete="new-password">
+          </label>
+          <label>Repetí la contraseña <input name="confirmar" type="password" autocomplete="new-password"></label>
+          <button class="btn btn-primario btn-ancho">Crear cuenta</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    Kiosco Don Pepe · E.E.S.T. N°6 "Chacabuco" · <a href="/docs" target="_blank">Documentación de la API</a>
+  </footer>
+
+  <!-- ===================== CARRITO (panel lateral) ===================== -->
+  <div class="fondo-oscuro" id="fondo-carrito" onclick="cerrarCarrito()" hidden></div>
+  <aside class="carrito" id="carrito">
+    <div class="carrito-cabecera">
+      <h2>Tu carrito</h2>
+      <button class="btn-cerrar" onclick="cerrarCarrito()">✕</button>
+    </div>
+
+    <div class="carrito-items" id="carrito-items"></div>
+
+    <form class="carrito-pie" id="form-checkout" onsubmit="enviarCheckout(event)" novalidate>
+      <label>Dirección de envío
+        <input name="direccion" placeholder="Ej: Av. Gaona 3000, Ciudadela, Buenos Aires" oninput="direccionModificada()">
+      </label>
+      <p class="cotizacion" id="cotizacion" hidden></p>
+      <p class="fila-total">Subtotal <span id="total-subtotal"></span></p>
+      <p class="fila-total">Envío <span id="total-envio"></span></p>
+      <p class="fila-total total-final">Total <span id="total-final"></span></p>
+      <p class="alerta" hidden></p>
+      <button class="btn btn-primario btn-ancho" id="btn-checkout">Calcular envío</button>
+      <p class="nota" id="nota-ingresar">Para comprar tenés que <a href="#/ingresar" onclick="cerrarCarrito()">ingresar</a>.</p>
+    </form>
+  </aside>
+
+  <!-- ===================== FORMULARIO DE PRODUCTO (admin) ===================== -->
+  <dialog id="dialogo-producto">
+    <form id="form-producto" onsubmit="guardarProducto(event)" novalidate>
+      <h2 id="titulo-producto">Nuevo producto</h2>
+      <p class="alerta" hidden></p>
+      <label>Nombre <input name="nombre"></label>
+      <label>Descripción (opcional) <textarea name="descripcion" rows="2"></textarea></label>
+      <label>Precio ($) <input name="precio" type="number" step="0.01"></label>
+      <label>Stock <input name="stock" type="number" step="1"></label>
+      <div class="botones-dialogo">
+        <button type="button" class="btn btn-borde" onclick="cerrarFormularioProducto()">Cancelar</button>
+        <button class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Mensajes emergentes -->
+  <div id="mensajes"></div>
+
+  <script src="/static/app.js?v=6"></script>
+</body>
+</html>

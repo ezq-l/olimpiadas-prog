@@ -25,11 +25,11 @@ def geocode_address(address: str) -> tuple[float, float]:
         )
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise GeocodingError(f"No se pudo contactar el servicio de mapas: {exc}") from exc
+        raise GeocodingError("No se pudo contactar el servicio de mapas. Intentá de nuevo en unos segundos.") from exc
 
     data = response.json()
     if not data:
-        raise GeocodingError(f"No se encontraron coordenadas para la direccion: {address}")
+        raise GeocodingError(f"No encontramos la dirección '{address}' en el mapa. Revisala e incluí localidad y provincia.")
 
     return float(data[0]["lat"]), float(data[0]["lon"])
 

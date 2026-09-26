@@ -119,3 +119,23 @@ def test_admin_actualiza_estado_pedido(client, admin_token, cliente_token):
     )
     assert response.status_code == 200
     assert response.json()["estado"] == "confirmado"
+
+
+@respx.mock
+def test_no_se_puede_eliminar_producto_con_pedidos(client, admin_token, cliente_token):
+    _mock_geocoding()
+    producto_id = _crear_producto(client, admin_token, stock=10)
+    client.post(
+        "/api/v1/pedidos",
+        json={
+            "direccion_envio": "Av. 9 de Julio 1, CABA, Argentina",
+            "items": [{"producto_id": producto_id, "cantidad": 1}],
+        },
+        headers={"Authorization": f"Bearer {cliente_token}"},
+    )
+
+    response = client.delete(
+        f"/api/v1/productos/{producto_id}", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 409
+    assert client.get(f"/api/v1/productos/{producto_id}").status_code == 200

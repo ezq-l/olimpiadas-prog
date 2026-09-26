@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
 from app.db.session import get_db
+from app.models.pedido import DetallePedido
 from app.models.producto import Producto
 from app.schemas.producto import ProductoCreate, ProductoOut, ProductoUpdate
 
@@ -59,5 +60,14 @@ def eliminar_producto(
     producto = db.get(Producto, producto_id)
     if not producto:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
+
+    # Integridad referencial: no se borra un producto que ya figura en pedidos.
+    tiene_pedidos = db.query(DetallePedido.id).filter(DetallePedido.producto_id == producto_id).first()
+    if tiene_pedidos:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar el producto porque tiene pedidos asociados. Poné su stock en 0 para dejar de venderlo.",
+        )
+
     db.delete(producto)
     db.commit()

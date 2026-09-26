@@ -1,6 +1,12 @@
 import os
 from functools import lru_cache
 
+from dotenv import load_dotenv
+
+# Carga las variables del archivo .env (si existe). No pisa las variables que ya
+# esten definidas en el entorno (Docker Compose, CI, etc.).
+load_dotenv()
+
 
 class Settings:
     PROJECT_NAME: str = "Kiosco Don Pepe API"

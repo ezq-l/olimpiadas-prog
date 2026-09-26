@@ -1,4 +1,4 @@
-"""Carga datos iniciales: un usuario administrador y productos de ejemplo.
+"""Carga datos iniciales: dos usuarios administradores y productos de ejemplo.
 Uso: python -m scripts.seed
 """
 
@@ -8,19 +8,27 @@ from app.db.session import SessionLocal, engine
 from app.models.producto import Producto
 from app.models.usuario import RolUsuario, Usuario
 
+# Dos administradores para mostrar que cada uno tiene su propia paleta de colores.
+ADMINISTRADORES = [
+    ("Administrador", "admin@kiosco.com", "admin123"),
+    ("Segundo Administrador", "admin2@kiosco.com", "admin123"),
+]
+
 
 def run() -> None:
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        if not db.query(Usuario).filter(Usuario.email == "admin@kiosco.com").first():
-            admin = Usuario(
-                nombre="Administrador",
-                email="admin@kiosco.com",
-                hashed_password=hash_password("admin123"),
-                rol=RolUsuario.ADMIN,
-            )
-            db.add(admin)
+        for nombre, email, password in ADMINISTRADORES:
+            if not db.query(Usuario).filter(Usuario.email == email).first():
+                db.add(
+                    Usuario(
+                        nombre=nombre,
+                        email=email,
+                        hashed_password=hash_password(password),
+                        rol=RolUsuario.ADMIN,
+                    )
+                )
 
         if db.query(Producto).count() == 0:
             productos = [
@@ -31,7 +39,7 @@ def run() -> None:
             db.add_all(productos)
 
         db.commit()
-        print("Seed completado: admin@kiosco.com / admin123")
+        print("Seed completado: admin@kiosco.com y admin2@kiosco.com (clave: admin123)")
     finally:
         db.close()
 

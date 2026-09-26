@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Autenticacion"])
 def register(payload: UsuarioCreate, db: Session = Depends(get_db)):
     existing = db.query(Usuario).filter(Usuario.email == payload.email).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya esta registrado")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ya existe una cuenta con ese email")
 
     user = Usuario(
         nombre=payload.nombre,
@@ -34,7 +34,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contrasena incorrectos",
+            detail="Email o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = create_access_token(subject=user.email, rol=user.rol.value)

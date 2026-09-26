@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: kiosco
       POSTGRES_DB: kiosco_don_pepe
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - kiosco_db_data:/var/lib/postgresql/data
     healthcheck:
